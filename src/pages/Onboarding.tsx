@@ -7,28 +7,21 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import { Role } from "@/lib/mock-data"; // imported from mock-data/types
+import { Role } from "@/lib/mock-data";
 
-type Step = "phone" | "otp" | "profile";
-
-const formatPhone = (p: string) => {
-  let clean = p.replace(/\D/g, "");
-  if (clean.startsWith("0")) {
-    return "+92" + clean.slice(1);
-  }
-  if (!clean.startsWith("+")) {
-    return "+" + clean;
-  }
-  return clean;
-};
+type Step = "auth" | "profile";
+type AuthMode = "signin" | "signup";
 
 const Onboarding = () => {
   const navigate = useNavigate();
   const { session, user, loading: authLoading, refreshUser } = useAuth();
   
-  const [step, setStep] = useState<Step>("phone");
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<Step>("auth");
+  const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,53 +36,65 @@ const Onboarding = () => {
     }
   }, [authLoading, session, user, navigate]);
 
-  const handleSendCode = async () => {
-    setIsLoading(true);
-    const formatted = formatPhone(phone);
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: formatted,
-    });
-    setIsLoading(false);
-
+  const syncUserToDB = async (userId: string, userEmail: string) => {
+    // Basic upsert into public.users table so the record exists
+    const { error } = await supabase.from('users').upsert({
+      id: userId,
+      email: userEmail,
+    }, { onConflict: 'id' });
     if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Verification code sent");
-      setStep("otp");
+      console.error("Error upserting user:", error);
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
-    const formatted = formatPhone(phone);
-    const { data: authData, error } = await supabase.auth.verifyOtp({
-      phone: formatted,
-      token: otp,
-      type: 'sms'
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
     
     if (error) {
-      setIsLoading(false);
       toast.error(error.message);
+      setIsLoading(false);
       return;
     }
 
-    // Upsert into users table
     if (authData?.user) {
-      const { error: upsertError } = await supabase.from('users').upsert({
-        id: authData.user.id,
-        phone: formatted,
-      }, { onConflict: 'id' });
-
-      if (upsertError) {
-        console.error("Error upserting user:", upsertError);
-      }
-      
+      await syncUserToDB(authData.user.id, email);
       await refreshUser();
     }
     
     setIsLoading(false);
-    // UseEffect will catch the session and redirect or move to profile
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    const { data: authData, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    if (authData?.user) {
+      await syncUserToDB(authData.user.id, email);
+      
+      // If email confirmation is off, this will sign us in immediately
+      if (authData.session) {
+        await refreshUser();
+      } else {
+        toast.success("Account created! Check your email for verification.");
+      }
+    }
+    
+    setIsLoading(false);
   };
 
   const handleSaveProfile = async () => {
@@ -134,79 +139,68 @@ const Onboarding = () => {
           </p>
         </div>
 
-        {step === "phone" && (
+        {step === "auth" && (
           <div className="flex-1">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
-              Welcome
-            </p>
-            <h2 className="font-serif text-3xl leading-tight text-foreground">
-              Sign in to <span className="italic">Nighabaan</span>
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Enter your phone number — we'll send you a verification code.
-            </p>
-
-            <div className="mt-8 space-y-4">
-              <label className="block text-sm font-medium text-foreground">
-                Phone number
-              </label>
-              <Input
-                type="tel"
-                placeholder="03XX XXXXXXX"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="h-14 rounded-xl text-base"
-              />
-              <Button
-                onClick={handleSendCode}
-                disabled={phone.length < 10 || isLoading}
-                className="h-14 w-full rounded-xl text-base font-semibold shadow-glow"
+            <div className="mb-8 flex gap-4">
+              <button 
+                onClick={() => setAuthMode('signin')}
+                className={cn("flex-1 border-b-2 pb-2 text-sm font-semibold transition-colors", authMode === 'signin' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground')}
               >
-                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : null}
-                Send verification code
-                <ArrowRight className="ml-1 h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === "otp" && (
-          <div className="flex-1">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
-              Verify
-            </p>
-            <h2 className="font-serif text-3xl leading-tight text-foreground">
-              Enter the <span className="italic">code</span>
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              We sent a 6-digit code to <span className="font-medium text-foreground">{phone || "your phone"}</span>.
-            </p>
-
-            <div className="mt-8 space-y-4">
-              <Input
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="••••••"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                className="h-16 rounded-xl text-center text-2xl font-semibold tracking-[0.5em]"
-              />
-              <Button
-                onClick={handleVerifyOtp}
-                disabled={otp.length < 4 || isLoading}
-                className="h-14 w-full rounded-xl text-base font-semibold shadow-glow"
+                Sign In
+              </button>
+              <button 
+                onClick={() => setAuthMode('signup')}
+                className={cn("flex-1 border-b-2 pb-2 text-sm font-semibold transition-colors", authMode === 'signup' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground')}
               >
-                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : null}
-                Verify & continue
-              </Button>
-              <button
-                onClick={() => setStep("phone")}
-                disabled={isLoading}
-                className="block w-full text-center text-sm text-muted-foreground hover:text-primary disabled:opacity-50"
-              >
-                Change phone number
+                Sign Up
               </button>
             </div>
+
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
+              Welcome {authMode === 'signin' ? 'Back' : ''}
+            </p>
+            <h2 className="font-serif text-3xl leading-tight text-foreground">
+              {authMode === 'signin' ? 'Sign in to' : 'Create account on'} <span className="italic">Nighabaan</span>
+            </h2>
+
+            <form onSubmit={authMode === 'signin' ? handleSignIn : handleSignUp} className="mt-8 space-y-4">
+              <div>
+                <label className="block mb-2 text-sm font-medium text-foreground">
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-14 rounded-xl text-base"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm font-medium text-foreground">
+                  Password
+                </label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-14 rounded-xl text-base"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={!email || password.length < 6 || isLoading}
+                className="mt-6 h-14 w-full rounded-xl text-base font-semibold shadow-glow"
+              >
+                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : null}
+                {authMode === 'signin' ? 'Sign In' : 'Sign Up'}
+                <ArrowRight className="ml-1 h-5 w-5" />
+              </Button>
+            </form>
           </div>
         )}
 

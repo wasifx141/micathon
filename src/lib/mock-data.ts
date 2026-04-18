@@ -10,7 +10,7 @@ export type JobStatus =
 
 export interface DBUser {
   id: string;
-  phone: string;
+  email: string;
   name: string | null;
   role: Role | null;
   wallet_balance: number;
