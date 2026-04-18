@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Nighabaan design system — calm trust-inspiring blue palette.
+   All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 210 60% 98%;
+    --foreground: 222 47% 18%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 18%;
+
+    /* Deep brand blue */
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 215 100% 96%;
+    --primary-glow: 220 95% 70%;
+
+    --secondary: 215 50% 95%;
+    --secondary-foreground: 222 47% 18%;
+
+    --muted: 214 40% 95%;
+    --muted-foreground: 215 20% 50%;
+
+    --accent: 215 100% 96%;
+    --accent-foreground: 220 90% 40%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 214 35% 90%;
+    --input: 214 35% 90%;
+    --ring: 220 90% 56%;
+
+    --radius: 1rem;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(180deg, hsl(215 100% 97%) 0%, hsl(210 100% 99%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(220 90% 56%) 0%, hsl(220 95% 65%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(215 100% 98%) 0%, hsl(220 80% 96%) 100%);
+
+    /* Shadows */
+    --shadow-soft: 0 2px 12px -2px hsl(220 50% 60% / 0.08);
+    --shadow-card: 0 4px 24px -8px hsl(220 60% 50% / 0.12);
+    --shadow-glow: 0 8px 32px -8px hsl(220 90% 56% / 0.35);
+
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 220 90% 65%;
+    --primary-foreground: 222 47% 11%;
+    --primary-soft: 220 50% 18%;
+    --primary-glow: 220 95% 75%;
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 220 50% 20%;
+    --accent-foreground: 220 90% 80%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 60% 50%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 60%;
+    --warning-foreground: 222 47% 11%;
+    --border: 217 32% 20%;
+    --input: 217 32% 20%;
+    --ring: 220 90% 65%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body, #root {
+    @apply h-full;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .font-serif {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  .bg-gradient-card {
+    background: var(--gradient-card);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+}
